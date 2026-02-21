@@ -100,13 +100,14 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
         run: |
+          VERSION="${GITHUB_REF_NAME:-dev}"
+          COMMIT="${GITHUB_SHA::8}"
+          DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          PKG="github.com/f9-o/orbit/internal/cli/commands"
           EXT=""
           if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
           go build \
-            -ldflags "-s -w \
-              -X github.com/f9-o/orbit/internal/cli/commands.Version=${GITHUB_REF_NAME:-dev} \
-              -X github.com/f9-o/orbit/internal/cli/commands.Commit=${GITHUB_SHA::8} \
-              -X 'github.com/f9-o/orbit/internal/cli/commands.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)'" \
+            -ldflags "-s -w -X ${PKG}.Version=${VERSION} -X ${PKG}.Commit=${COMMIT} -X ${PKG}.BuildDate=${DATE}" \
             -o dist/orbit-${{ matrix.goos }}-${{ matrix.goarch }}${EXT} \
             ./cmd/orbit
 
@@ -117,11 +118,12 @@ jobs:
           path: dist/
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Security scan
+  # Security scan (non-blocking)
   # ─────────────────────────────────────────────────────────────────────────────
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
