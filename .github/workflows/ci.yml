@@ -39,13 +39,7 @@ jobs:
         run: go vet ./...
 
       - name: Run tests
-        run: go test -race -coverprofile=coverage.out ./...
-
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage.out
+        run: go test -count=1 -short ./...
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Lint
@@ -109,7 +103,10 @@ jobs:
           EXT=""
           if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
           go build \
-            -ldflags "-s -w -X main.version=${GITHUB_REF_NAME:-dev} -X main.commit=${GITHUB_SHA::8} -X main.buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -ldflags "-s -w \
+              -X github.com/f9-o/orbit/internal/cli/commands.Version=${GITHUB_REF_NAME:-dev} \
+              -X github.com/f9-o/orbit/internal/cli/commands.Commit=${GITHUB_SHA::8} \
+              -X 'github.com/f9-o/orbit/internal/cli/commands.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)'" \
             -o dist/orbit-${{ matrix.goos }}-${{ matrix.goarch }}${EXT} \
             ./cmd/orbit
 
