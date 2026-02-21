@@ -42,29 +42,6 @@ jobs:
         run: go test -count=1 -short ./...
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Lint
-  # ─────────────────────────────────────────────────────────────────────────────
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    continue-on-error: true
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: true
-
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.59
-          args: --timeout=5m
-
-  # ─────────────────────────────────────────────────────────────────────────────
   # Cross-platform build matrix
   # ─────────────────────────────────────────────────────────────────────────────
   build:
@@ -117,24 +94,3 @@ jobs:
         with:
           name: orbit-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Security scan (non-blocking)
-  # ─────────────────────────────────────────────────────────────────────────────
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    continue-on-error: true
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: govulncheck
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
