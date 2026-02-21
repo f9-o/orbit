@@ -7,10 +7,9 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 env:
-  GO_VERSION: "1.22"
+  GO_VERSION: "1.23"
 
 jobs:
   release:
@@ -29,14 +28,15 @@ jobs:
           cache: true
 
       - name: Run tests before release
-        run: go test -race ./...
+        run: go test -count=1 -short ./...
 
       - name: Build release binaries
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           COMMIT="${GITHUB_SHA::8}"
           DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          LDFLAGS="-s -w -X main.version=${TAG} -X main.commit=${COMMIT} -X main.buildDate=${DATE}"
+          PKG="github.com/f9-o/orbit/internal/cli/commands"
+          LDFLAGS="-s -w -X ${PKG}.Version=${TAG} -X ${PKG}.Commit=${COMMIT} -X ${PKG}.BuildDate=${DATE}"
 
           mkdir -p dist
 
@@ -67,15 +67,6 @@ jobs:
           sha256sum orbit-* > checksums.txt
           cat checksums.txt
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3
-
-      - name: Sign binaries with cosign
-        run: |
-          for f in dist/orbit-*; do
-            cosign sign-blob --yes "${f}" --output-signature "${f}.sig"
-          done
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -87,7 +78,6 @@ jobs:
             dist/orbit-darwin-amd64
             dist/orbit-darwin-arm64
             dist/orbit-windows-amd64.exe
-            dist/orbit-*.sig
             dist/checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
