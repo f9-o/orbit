@@ -1,32 +1,47 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
+# ─────────────────────────────────────────────────────────────────────────────
+# Orbit .gitignore
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Go build outputs
+dist/
 *.exe
-*.exe~
 *.dll
 *.so
 *.dylib
 
-# Test binary, built with `go test -c`
+# Test cache & coverage
+coverage.out
+coverage.html
 *.test
 
-# Code coverage profiles and other test artifacts
-*.out
-coverage.*
-*.coverprofile
-profile.cov
+# Go module cache
+vendor/
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Orbit runtime files
+.orbit/
+orbit.yaml.local
 
-# Go workspace file
-go.work
-go.work.sum
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
-# env file
-.env
+# Logs
+*.log
+logs/
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# Secrets — never commit these
+*.pem
+*.key
+*.crt
+id_rsa
+id_ed25519
+known_hosts.orbit
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini

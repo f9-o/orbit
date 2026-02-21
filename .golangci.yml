@@ -1,0 +1,38 @@
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofmt
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+    - noctx
+    - bodyclose
+
+linters-settings:
+  gosec:
+    excludes:
+      - G304  # File path provided as taint input (legitimate in config loading)
+      - G306  # Permissive file permissions (config files)
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+      - name: unexported-return
+        severity: warning
+
+issues:
+  exclude-rules:
+    - path: "_test.go"
+      linters: [gosec, errcheck]
+    - path: "internal/tui"
+      linters: [unused]  # TUI components may have unexported fields used only by Bubble Tea
+
+run:
+  timeout: 5m
+  go: "1.22"

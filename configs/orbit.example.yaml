@@ -1,0 +1,140 @@
+# orbit.yaml — Project manifest
+# Full reference: https://github.com/f9-o/orbit/docs/cli-reference.md
+version: "1"
+
+project:
+  name: my-app
+  environment: production
+
+# ─────────────────────────────────────────────────────────────────
+# Remote Nodes (optional — omit for local-only deployments)
+# ─────────────────────────────────────────────────────────────────
+# nodes:
+#   - name: prod-01
+#     host: 192.168.1.10
+#     user: deploy
+#     key: ~/.ssh/orbit_ed25519
+#     port: 22
+#     groups: [production]
+#
+#   - name: staging
+#     host: staging.example.com
+#     user: deploy
+#     key: ~/.ssh/orbit_ed25519
+
+# ─────────────────────────────────────────────────────────────────
+# Services
+# ─────────────────────────────────────────────────────────────────
+services:
+  - name: web
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    user: "10001:10001"
+    labels:
+      orbit.env: production
+      orbit.tier: frontend
+    health_check:
+      type: http
+      url: http://localhost:80/
+      timeout: 5s
+      interval: 10s
+      retries: 3
+    proxy:
+      domain: app.example.com
+      ssl: true
+      port: 80
+      backend: 80
+    deploy:
+      replicas: 2
+      strategy: rolling
+      max_surge: 1
+      rollback_on_failure: true
+      readiness_delay: 2s
+
+  - name: api
+    image: myregistry.io/myapp:${TAG:-latest}
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      APP_ENV: production
+    restart: unless-stopped
+    health_check:
+      type: http
+      url: http://localhost:8080/health
+      expected_code: 200
+      timeout: 10s
+      interval: 15s
+      retries: 5
+    proxy:
+      domain: api.example.com
+      ssl: true
+      backend: 8080
+    deploy:
+      replicas: 2
+      strategy: rolling
+      rollback_on_failure: true
+
+  - name: postgres
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: myapp
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    health_check:
+      type: tcp
+      port: 5432
+      timeout: 5s
+      interval: 10s
+      retries: 5
+
+  - name: redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    health_check:
+      type: tcp
+      port: 6379
+      timeout: 3s
+      interval: 10s
+      retries: 3
+
+# ─────────────────────────────────────────────────────────────────
+# Reverse Proxy
+# ─────────────────────────────────────────────────────────────────
+proxy:
+  backend: nginx # nginx | caddy
+  config_path: /etc/nginx/conf.d
+
+# ─────────────────────────────────────────────────────────────────
+# SSL / ACME
+# ─────────────────────────────────────────────────────────────────
+ssl:
+  acme_url: https://acme-v02.api.letsencrypt.org/directory
+  email: ${ACME_EMAIL}
+  cert_dir: ~/.orbit/certs
+  renew_days: 30
+
+# ─────────────────────────────────────────────────────────────────
+# Metrics
+# ─────────────────────────────────────────────────────────────────
+metrics:
+  enabled: true
+  port: 9091
+
+# ─────────────────────────────────────────────────────────────────
+# Logging
+# ─────────────────────────────────────────────────────────────────
+log:
+  level: info # debug | info | warn | error
+  format: text # text | json
+  file: ~/.orbit/logs/orbit.log
